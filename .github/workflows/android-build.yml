@@ -118,5 +118,6 @@ jobs:
           name: harbor-android
           path: |
             src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            !src-tauri/gen/android/app/build/outputs/apk/**/*-unsigned.apk
           retention-days: 14
           if-no-files-found: warn
