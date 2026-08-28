@@ -85,16 +85,31 @@ jobs:
           rm -rf mpv-android.apk mpv-android-extract
           echo "RUSTFLAGS=-L $(pwd)/$JNILIBS" >> "$GITHUB_ENV"
 
-      - name: Tauri android build (debug)
+      # A persistent signing key so successive builds share one certificate
+      # and can be installed as an update (adb install -r) instead of
+      # forcing an uninstall/reinstall every time.
+      - name: Restore Android signing keystore
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/keystore"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/keystore/harbor-android.keystore"
+          cat > src-tauri/gen/android/keystore.properties <<EOF
+          password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          storeFile=$RUNNER_TEMP/keystore/harbor-android.keystore
+          EOF
+
+      - name: Tauri android build (release, unsigned APK skipped)
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
-        run: pnpm tauri android build --debug --target aarch64
+        run: pnpm tauri android build --target aarch64
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: harbor-android-debug
+          name: harbor-android
           path: |
             src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           retention-days: 14
