@@ -24,11 +24,14 @@ import { getThemeById } from "@/lib/theme";
 import { useParental } from "@/lib/parental";
 import { useView, type View } from "@/lib/view";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
+import { isTauriMobile } from "@/lib/platform";
 import { OverflowNav, type NavEntry } from "@/chrome/nav-overflow";
 import { HoverNavIcon } from "@/chrome/hover-nav-icon";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
 
-const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+// Desktop-only: there's no window to minimize/maximize/close on mobile.
+const IS_TAURI =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !isTauriMobile();
 
 export function RoyalTopbar() {
   const { view, setView, chromeHidden } = useView();

@@ -17,11 +17,14 @@ import { useView, type View } from "@/lib/view";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { TvModalClose } from "@/components/tv-modal-close";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
+import { isTauriMobile } from "@/lib/platform";
 import { OverflowNav, type NavEntry } from "@/chrome/nav-overflow";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
 import { ThreeLiquidGlassSurface } from "@/components/ThreeLiquidGlassSurface";
 
-const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+// Desktop-only: there's no window to minimize/maximize/close on mobile.
+const IS_TAURI =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !isTauriMobile();
 
 export function TopDock() {
   const { view, setView, chromeHidden } = useView();

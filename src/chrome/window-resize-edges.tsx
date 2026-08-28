@@ -1,8 +1,11 @@
 import { useSettings } from "@/lib/settings";
 import { startResize, useMaximized, type ResizeDir } from "@/lib/window";
+import { isTauriMobile } from "@/lib/platform";
 import { useWindowFullscreen } from "@/lib/use-window-fullscreen";
 
-const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+// Desktop-only: there's no window to resize by dragging an edge on mobile.
+const IS_TAURI =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !isTauriMobile();
 
 const EDGES: Array<{ dir: ResizeDir; cls: string }> = [
   { dir: "North", cls: "inset-x-0 top-0 h-2 cursor-ns-resize" },

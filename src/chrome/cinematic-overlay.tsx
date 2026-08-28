@@ -11,12 +11,14 @@ import { useParental } from "@/lib/parental";
 import { useView, type View } from "@/lib/view";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
+import { isTauriMobile } from "@/lib/platform";
 import { OverflowNav, type NavEntry } from "@/chrome/nav-overflow";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
 import { ProfileChipCompact } from "@/chrome/cinematic-overlay/profile-chip-compact";
 
+// Desktop-only: there's no window to minimize/maximize/close on mobile.
 const IS_TAURI =
-  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !isTauriMobile();
 
 export function CinematicOverlay() {
   const { view, setView, chromeHidden } = useView();

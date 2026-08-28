@@ -60,6 +60,12 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: pnpm tauri android init
 
+      # `tauri android init` scaffolds its own placeholder launcher icons
+      # instead of picking up the real ones already generated at
+      # src-tauri/icons/android/. Overwrite them with Harbor's actual icon.
+      - name: Apply Harbor launcher icon
+        run: cp -rf src-tauri/icons/android/. src-tauri/gen/android/app/src/main/res/
+
       # Experimental: no libmpv is published for Android. Borrow the prebuilt
       # libmpv.so (+ its ffmpeg deps) from the mpv-android project's per-ABI
       # release APK until Harbor has its own Android player backend.

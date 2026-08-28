@@ -1,8 +1,11 @@
 import { Copy, Minus, Square, X } from "lucide-react";
 import { useSettings } from "@/lib/settings";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
+import { isTauriMobile } from "@/lib/platform";
 
-const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+// Desktop-only: there's no window to minimize/maximize/close on mobile.
+const IS_TAURI =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window && !isTauriMobile();
 
 export function WindowControlButtons({ t }: { t: (key: string) => string }) {
   const { settings } = useSettings();
