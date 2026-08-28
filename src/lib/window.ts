@@ -3,9 +3,13 @@ import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { getWindowFullscreen } from "@/lib/fullscreen-state";
-import { isMacDesktop } from "@/lib/platform";
+import { isMacDesktop, isTauriMobile } from "@/lib/platform";
 
-const win: Window | null = isTauri() ? getCurrentWindow() : null;
+// Tauri's window plugin has no mobile-side implementation (there is no
+// desktop-window concept on Android/iOS), so calling any of its methods
+// there rejects with "Plugin window not initialized". Treat mobile like
+// the non-Tauri web case: no window handle, every export a no-op.
+const win: Window | null = isTauri() && !isTauriMobile() ? getCurrentWindow() : null;
 
 const IS_MAC = isMacDesktop();
 

@@ -32,6 +32,12 @@ export function isWindowsDesktop(): boolean {
   return detectedDesktopPlatform() === "windows";
 }
 
+export function isTauriMobile(): boolean {
+  if (!isTauri()) return false;
+  const platform = nativePlatform();
+  return platform === "android" || platform === "ios";
+}
+
 export function isMobileDevice(): boolean {
   if (typeof navigator === "undefined" || typeof window === "undefined") return false;
   const ua = navigator.userAgent || "";
