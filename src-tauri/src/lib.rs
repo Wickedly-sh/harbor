@@ -1,5 +1,6 @@
 mod anime4k;
 mod binary_lookup;
+#[cfg(desktop)]
 mod browser;
 mod cast;
 mod cast_hls;
@@ -12,10 +13,13 @@ mod dlna;
 mod download;
 mod dvr;
 mod fonts;
+#[cfg(desktop)]
 mod fullscreen;
+#[cfg(desktop)]
 mod hdr_overlay;
 mod http_fetch;
 mod local_lib;
+#[cfg(desktop)]
 mod modal_overlay;
 mod mpv;
 mod multiview;
@@ -25,6 +29,7 @@ mod roku;
 mod mpv_render_mac;
 #[cfg(target_os = "linux")]
 mod mpv_render_linux;
+#[cfg(desktop)]
 mod pip;
 #[cfg(target_os = "macos")]
 mod pip_mac;
@@ -43,6 +48,7 @@ mod thumbs;
 mod torrent_engine;
 mod trailer;
 mod transcode;
+#[cfg(desktop)]
 mod tray;
 mod web_server;
 mod webview_helpers;
@@ -425,16 +431,19 @@ pub fn run() {
             stream_proxy::ProxyState::placeholder()
         });
     let mpv_state = mpv::MpvState::new();
+    #[cfg(desktop)]
     let pip_state = pip::PipState::new();
+    #[cfg(desktop)]
     let fullscreen_state = fullscreen::FullscreenState::new();
     let thumbs_state = thumbs::ThumbsState::new();
     let dvr_state = dvr::DvrState::new();
     let multiview_state = multiview::MultiviewState::new();
+    #[cfg(desktop)]
     let modal_overlay_state = modal_overlay::ModalOverlayState::new();
     let app_builder = tauri::Builder::default();
     // Let a Linux development build run alongside the installed Harbor app.
     // Packaged builds keep the normal single-instance behavior.
-    #[cfg(not(all(target_os = "linux", debug_assertions)))]
+    #[cfg(all(desktop, not(all(target_os = "linux", debug_assertions))))]
     let app_builder = app_builder
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             use tauri::{Emitter, Manager};
@@ -461,27 +470,31 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init())
-        .plugin(
-            tauri_plugin_window_state::Builder::default()
-                .with_state_flags(
-                    tauri_plugin_window_state::StateFlags::SIZE
-                        | tauri_plugin_window_state::StateFlags::POSITION
-                        | tauri_plugin_window_state::StateFlags::MAXIMIZED
-                        | tauri_plugin_window_state::StateFlags::FULLSCREEN,
-                )
-                .build(),
-        )
+        .plugin(tauri_plugin_process::init());
+    #[cfg(desktop)]
+    let app_builder = app_builder.plugin(
+        tauri_plugin_window_state::Builder::default()
+            .with_state_flags(
+                tauri_plugin_window_state::StateFlags::SIZE
+                    | tauri_plugin_window_state::StateFlags::POSITION
+                    | tauri_plugin_window_state::StateFlags::MAXIMIZED
+                    | tauri_plugin_window_state::StateFlags::FULLSCREEN,
+            )
+            .build(),
+    );
+    let app_builder = app_builder
         .manage(proxy_state)
         .manage(mpv_state)
-        .manage(pip_state)
-        .manage(fullscreen_state)
         .manage(thumbs_state)
         .manage(dvr_state)
         .manage(multiview_state)
-        .manage(modal_overlay_state)
         .manage(discord_rp::DiscordState::new())
         .manage(download::DownloadState::new());
+    #[cfg(desktop)]
+    let app_builder = app_builder
+        .manage(pip_state)
+        .manage(fullscreen_state)
+        .manage(modal_overlay_state);
 
     #[cfg(target_os = "macos")]
     let app_builder = app_builder.register_uri_scheme_protocol("stremio", |ctx, request| {
@@ -594,7 +607,11 @@ pub fn run() {
             use tauri::Manager;
             match event {
                 tauri::WindowEvent::CloseRequested { api, .. } => {
-                    if tray::close_to_tray() {
+                    #[cfg(desktop)]
+                    let close_to_tray = tray::close_to_tray();
+                    #[cfg(not(desktop))]
+                    let close_to_tray = false;
+                    if close_to_tray {
                         api.prevent_close();
                         let _ = window.hide();
                     } else if !CLOSE_IN_PROGRESS.swap(true, std::sync::atomic::Ordering::SeqCst) {
@@ -698,30 +715,52 @@ pub fn run() {
             mpv::mpv_gif_stop,
             mpv::mpv_gif_abort,
             mpv::mpv_clip_save,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_open,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_close,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_emit_state,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_emit_action,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_sync,
+            #[cfg(desktop)]
             modal_overlay::modal_overlay_get_pending,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_open,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_close,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_hide,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_sync,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_emit_props,
+            #[cfg(desktop)]
             hdr_overlay::hdr_overlay_emit_action,
             mpv::mpv_sub_add,
             mpv::sub_download,
             mpv::mpv_stop,
+            #[cfg(desktop)]
             pip::pip_open,
+            #[cfg(desktop)]
             pip::pip_get_session,
+            #[cfg(desktop)]
             pip::pip_close,
+            #[cfg(desktop)]
             pip::pip_publish_state,
+            #[cfg(desktop)]
             pip::window_pip_enter,
+            #[cfg(desktop)]
             pip::window_pip_exit,
+            #[cfg(desktop)]
             fullscreen::window_fullscreen_enter,
+            #[cfg(desktop)]
             fullscreen::window_fullscreen_exit,
+            #[cfg(desktop)]
             browser::browser_open,
+            #[cfg(desktop)]
             browser::browser_close,
             thumbs::thumbs_set_url,
             thumbs::thumbs_spawn_eager,
@@ -768,7 +807,9 @@ pub fn run() {
             streams::streams_parse,
             streams::streams_core_version,
             local_lib::harbor_scan_folder,
+            #[cfg(desktop)]
             tray::tray_set_prefs,
+            #[cfg(desktop)]
             tray::tray_set_custom_themes,
             stremio_auth::stremio_auth_start,
             song_id::recognize_now_playing,
