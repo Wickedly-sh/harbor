@@ -106,6 +106,8 @@ jobs:
           else:
               print("signingConfigs already present, skipping")
           PY
+          echo "--- app/build.gradle.kts (head) ---"
+          head -n 20 src-tauri/gen/android/app/build.gradle.kts
 
       # `tauri android init` scaffolds its own placeholder launcher icons
       # instead of picking up the real ones already generated at
