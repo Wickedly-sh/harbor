@@ -74,11 +74,13 @@ jobs:
           s = p.read_text()
 
           if "signingConfigs" not in s:
-              s = s.replace(
-                  "plugins {",
-                  "import java.util.Properties\nimport java.io.FileInputStream\n\nplugins {",
-                  1,
-              )
+              imports = ""
+              if "import java.util.Properties" not in s:
+                  imports += "import java.util.Properties\n"
+              if "import java.io.FileInputStream" not in s:
+                  imports += "import java.io.FileInputStream\n"
+              if imports:
+                  s = s.replace("plugins {", imports + "\nplugins {", 1)
               signing_block = '''    signingConfigs {
                   create("release") {
                       val keystorePropertiesFile = rootProject.file("keystore.properties")
