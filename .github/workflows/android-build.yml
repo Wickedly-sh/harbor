@@ -60,6 +60,51 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: pnpm tauri android init
 
+      # `tauri android init` scaffolds app/build.gradle.kts without any
+      # release signingConfig wired up, even when keystore.properties exists
+      # (Tauri's docs require this to be added by hand). Without it, `tauri
+      # android build` silently produces an *-unsigned.apk instead of using
+      # our persistent keystore.
+      - name: Wire up release signing in build.gradle.kts
+        run: |
+          python3 - <<'PY'
+          import pathlib
+
+          p = pathlib.Path("src-tauri/gen/android/app/build.gradle.kts")
+          s = p.read_text()
+
+          if "signingConfigs" not in s:
+              s = s.replace(
+                  "plugins {",
+                  "import java.util.Properties\nimport java.io.FileInputStream\n\nplugins {",
+                  1,
+              )
+              signing_block = '''    signingConfigs {
+                  create("release") {
+                      val keystorePropertiesFile = rootProject.file("keystore.properties")
+                      val keystoreProperties = Properties()
+                      if (keystorePropertiesFile.exists()) {
+                          keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+                      }
+                      keyAlias = keystoreProperties["keyAlias"] as String
+                      keyPassword = keystoreProperties["password"] as String
+                      storeFile = file(keystoreProperties["storeFile"] as String)
+                      storePassword = keystoreProperties["password"] as String
+                  }
+              }
+              buildTypes {'''
+              s = s.replace("    buildTypes {", signing_block, 1)
+              s = s.replace(
+                  'getByName("release") {\n            isMinifyEnabled = true',
+                  'getByName("release") {\n            signingConfig = signingConfigs.getByName("release")\n            isMinifyEnabled = true',
+                  1,
+              )
+              p.write_text(s)
+              print("Patched build.gradle.kts with release signing config")
+          else:
+              print("signingConfigs already present, skipping")
+          PY
+
       # `tauri android init` scaffolds its own placeholder launcher icons
       # instead of picking up the real ones already generated at
       # src-tauri/icons/android/. Overwrite them with Harbor's actual icon.
